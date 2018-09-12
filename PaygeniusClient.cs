@@ -5,6 +5,7 @@ using System.Net;
 using System.IO;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Paygenius.Requests;
 
 namespace Paygenius
@@ -62,20 +63,18 @@ namespace Paygenius
         {
             string data = JsonConvert.SerializeObject(request);
             string fullEndpoint = this.mainEndpoint+request.getEndpoint();
-
+            var nullJsonCheck = data.ToString().Replace("{", "").Replace("}","").Trim();
+            var signiture = this.sign(fullEndpoint, String.IsNullOrEmpty(nullJsonCheck) ? null:data);            
 
             var httpWebRequest = (HttpWebRequest)WebRequest.Create(fullEndpoint);
             httpWebRequest.Accept = "application/json";
             httpWebRequest.Headers["X-Token"] = token;
-            var signiture = this.sign(fullEndpoint, data);
-            
             httpWebRequest.Headers["X-Signature"] = signiture;
-            if (data != null)
+
+             if (!String.IsNullOrEmpty(nullJsonCheck))
             {
-                Console.WriteLine(fullEndpoint);
                 httpWebRequest.ContentType = "application/json";
                 httpWebRequest.Method = "POST";
-
                 using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
                 {
                     streamWriter.Write(data);
@@ -86,17 +85,16 @@ namespace Paygenius
             else
             {
                 httpWebRequest.Method = "GET";
-            }
-
+            } 
+            
             var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-            Console.Write(httpResponse.StatusCode);
             using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
             {
                 return streamReader.ReadToEnd();
             }
         }
 
-        public string sign(string endpoint, string data)
+        public string sign(string endpoint, string data=null)
         {
                 string toSign = endpoint;
                 if (data != null)

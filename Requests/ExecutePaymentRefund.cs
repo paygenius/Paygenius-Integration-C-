@@ -4,11 +4,11 @@ namespace Paygenius.Requests
 {
     public class ExecutePaymentRefund:AbstractRequest
     {
-        public string reference;
+        protected string reference;
 
         public ExecutePaymentRefund(string reference, double amount)
         {
-            this.endpoint = "payment/{0}/refund";
+            this.endpoint = string.Format("payment/{0}/refund", this.reference);
             this.method = "POST";
         }
 
